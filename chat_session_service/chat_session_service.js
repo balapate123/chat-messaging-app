@@ -6,9 +6,9 @@ let channel;
 
 
 const sessions = {}; 
-const messages = {};
+const messages = {}; 
 
-
+// Logger setup
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
@@ -42,7 +42,7 @@ async function connectToRabbitMQ() {
     } catch (error) {
       logger.error('Error processing message:', error);
 
-     
+      
       channel.sendToQueue(
         'response_queue',
         Buffer.from(
@@ -83,46 +83,64 @@ async function createSession(user_id, session_id, correlation_id) {
 
 // Join an existing session
 async function joinSession(user_id, session_id, correlation_id) {
-  if (!sessions[session_id]) {
-    channel.sendToQueue(
-      'response_queue',
-      Buffer.from(
-        JSON.stringify({
-          session_id,
-          correlation_id,
-          error: `Session ${session_id} does not exist`,
-        })
-      )
-    );
-    throw new Error(`Session ${session_id} does not exist`);
-  }
+    logger.info(`Attempting to join session: ${session_id} by user: ${user_id}`);
+    logger.info(`Current sessions before validation: ${JSON.stringify(sessions)}`);
+  
+    
+    if (!sessions[session_id]) {
+      logger.error(`Validation failed: Session ${session_id} does not exist`);
+      
+      
+      channel.sendToQueue(
+        'response_queue',
+        Buffer.from(
+          JSON.stringify({
+            session_id,
+            correlation_id,
+            error: `Session ${session_id} does not exist`,
+          })
+        )
+      );
+      throw new Error(`Session ${session_id} does not exist`);
+    }
+  
+    logger.info(`Validation passed: Session ${session_id} exists`);
+  
+    
+    if (!sessions[session_id].includes(user_id)) {
+      sessions[session_id].push(user_id);
+      logger.info(`User ${user_id} successfully joined session ${session_id}`);
+      logger.info(`Current sessions after adding user: ${JSON.stringify(sessions)}`);
+  
 
-  if (!sessions[session_id].includes(user_id)) {
-    sessions[session_id].push(user_id);
-    logger.info(`User ${user_id} joined session ${session_id}`);
-    channel.sendToQueue(
-      'response_queue',
-      Buffer.from(
-        JSON.stringify({
-          session_id,
-          correlation_id,
-          message: `User ${user_id} joined session ${session_id}`,
-        })
-      )
-    );
-  } else {
-    channel.sendToQueue(
-      'response_queue',
-      Buffer.from(
-        JSON.stringify({
-          session_id,
-          correlation_id,
-          message: `User ${user_id} is already part of session ${session_id}`,
-        })
-      )
-    );
-  }
+      channel.sendToQueue(
+        'response_queue',
+        Buffer.from(
+          JSON.stringify({
+            session_id,
+            correlation_id,
+            message: `User ${user_id} joined session ${session_id}`,
+          })
+        )
+      );
+    } else {
+      logger.info(`User ${user_id} is already part of session ${session_id}`);
+      logger.info(`No change to sessions: ${JSON.stringify(sessions)}`);
+  
+     
+      channel.sendToQueue(
+        'response_queue',
+        Buffer.from(
+          JSON.stringify({
+            session_id,
+            correlation_id,
+            message: `User ${user_id} is already part of session ${session_id}`,
+          })
+        )
+      );
+    }
 }
+  
 
 // Send a message to a session
 async function sendMessage(user_id, session_id, message, correlation_id) {
