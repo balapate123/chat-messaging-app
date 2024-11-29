@@ -28,7 +28,7 @@ A basic chat messaging system built with Node.js, RabbitMQ, and Express. This pr
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/balapate123/chat-messaging.git
+git clone https://github.com/balapate123/chat-messaging-app.git
 cd chat-messaging
 ```
 
