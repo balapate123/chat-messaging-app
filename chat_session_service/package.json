@@ -1,0 +1,17 @@
+{
+  "name": "chat_session_service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "amqplib": "^0.10.5",
+    "chat_session_service": "file:",
+    "winston": "^3.17.0"
+  }
+}
